@@ -11,5 +11,25 @@ export const values = [
   { name: 'Independence', description: 'Trusting your own voice and choices.', icon: Sun, affirmation: 'Your voice matters, and you are allowed to choose your own path.', action: 'Make one small choice today based on what you genuinely need.' },
 ];
 export function getAffirmation(selected: string[]) {
+  if (selected.length > 3) return 'You can hold many things close to your heart. These values are directions you can return to, not a checklist you need to complete. One small choice is enough for today.';
   return values.filter(value => selected.includes(value.name)).map(value => value.affirmation).join(' ');
+}
+
+const thoughts = [
+  { values: ['Compassion'], text: 'No act of kindness, no matter how small, is ever wasted.', attribution: 'Aesop, “The Lion and the Mouse”' },
+  { values: ['Growth', 'Courage'], text: 'The journey of a thousand miles begins with a single step.', attribution: 'Traditionally attributed to Lao Tzu' },
+  { values: ['Family', 'Connection'], text: 'A moment of presence can be a small way of saying: you matter.', attribution: 'An original PurposeLock reflection' },
+  { values: ['Health'], text: 'Caring for yourself is meaningful, even when no one else sees it.', attribution: 'An original PurposeLock reflection' },
+  { values: ['Curiosity'], text: 'You can begin with a question, not an answer.', attribution: 'An original PurposeLock reflection' },
+  { values: ['Integrity', 'Independence'], text: 'A choice that feels true to you does not need to impress anyone else.', attribution: 'An original PurposeLock reflection' },
+];
+export function getThought(selected: string[]) {
+  return thoughts.find(thought => thought.values.some(value => selected.includes(value))) ?? thoughts[1];
+}
+export function getActionAnalysis(selected: string[], action: string, memory: string) {
+  const matched = values.find(value => value.action === action && selected.includes(value.name));
+  const connection = matched
+    ? `This step offers a small way to practice ${matched.name.toLowerCase()}: ${matched.description.toLowerCase()}`
+    : `Your chosen step can be a chance to practice what ${selected.length > 3 ? 'these values' : selected.join(', ')} means to you. You decide which connection feels most true.`;
+  return `${connection} ${memory.trim() ? 'The memory you shared is a reminder of a moment when you felt connected to what matters. This action can be another moment, without needing to repeat or outdo the past.' : 'You do not have to act on every value at once. Making room for one today can be enough.'} This is an invitation, not a verdict about who you are.`;
 }
