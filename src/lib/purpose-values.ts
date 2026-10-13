@@ -11,8 +11,8 @@ export const values = [
   { name: 'Independence', description: 'Trusting your own voice and choices.', icon: Sun, affirmation: 'Your voice matters, and you are allowed to choose your own path.', action: 'Make one small choice today based on what you genuinely need.' },
 ];
 export function getAffirmation(selected: string[]) {
-  if (selected.length > 3) return 'You can hold many things close to your heart. These values are directions you can return to, not a checklist you need to complete. One small choice is enough for today.';
-  return values.filter(value => selected.includes(value.name)).map(value => value.affirmation).join(' ');
+  if (selected.length > 1) return 'These values are already part of your story. One small choice can give them a little space today.';
+  return values.find(value => selected.includes(value.name))?.affirmation ?? 'One small choice is enough for today.';
 }
 
 const thoughts = [
@@ -36,15 +36,16 @@ export function getActionAnalysis(selected: string[], action: string, memory: st
 
 export function getCompletionAnalysis(selected: string[], action: string, reflection: string) {
   const namedValues = selected.map(value => value.toLowerCase()).join(', ');
-  return `You chose ${namedValues} as directions that matter to you, and made space to try this step: “${action}” ${reflection.trim() ? 'The reflection you wrote below is your own account of that moment. You might notice where the action felt connected to those values, or what you would like to try differently.' : 'Even without writing anything down, you can notice whether this step felt connected to those values and what you might want to carry forward.'} You decide what this moment means; it does not have to prove anything about your worth.`;
+  const matched = values.find(value => value.action === action && selected.includes(value.name));
+  return `You made space to try a step toward ${matched?.name.toLowerCase() ?? namedValues}. ${reflection.trim() ? 'Your reflection is a place to notice how it connected with what matters, or what you might try differently.' : 'You can quietly notice what felt connected to your values, and what you might try differently.'} Your worth was never the task.`;
 }
 
 export function getNextSteps(selected: string[], action: string) {
   const matched = values.find(value => selected.includes(value.name) && value.action === action);
   const direction = matched?.name.toLowerCase() ?? selected[0]?.toLowerCase() ?? 'what matters to you';
   return [
-    `This week, try “${action}” again, or make it smaller if that feels kinder. Let ${direction} be a direction, not a deadline.`,
-    'If it feels helpful, jot down your thought to carry with you or keep one of your own photos somewhere visible.',
-    `After another try, take a quiet moment to ask: how did this connect with ${direction}, and what would I like to try next?`,
+    `Try this step again this week, or a smaller version, as a way to practice ${direction}.`,
+    'Keep your thought or one of your photos somewhere you will see it.',
+    `After another try, ask: what felt connected to ${direction}?`,
   ];
 }

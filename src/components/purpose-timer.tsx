@@ -35,6 +35,6 @@ export function FocusTimer({ minutes, onDurationChange }: { minutes: number; onD
     </fieldset>
     <div className="timer-wrap"><svg className="timer-ring" viewBox="0 0 230 230" aria-hidden="true"><circle className="timer-track" cx="115" cy="115" r="108" /><circle className="timer-progress" cx="115" cy="115" r="108" strokeDasharray={678.584} strokeDashoffset={678.584 * (1 - seconds / (minutes * 60))} /></svg><div><div className="timer-digits" role="timer" aria-label={`${Math.floor(seconds / 60)} minutes ${seconds % 60} seconds remaining`}>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</div><div className="timer-state" aria-live="polite">{seconds === 0 ? 'A little space, made' : running ? 'One moment at a time' : hasStarted ? 'Take your time' : 'Your time to begin'}</div></div></div>
     <div className="timer-controls"><Button variant="reset" onClick={toggle} disabled={!valid || seconds === 0}>{running ? <Pause /> : <Play />}{running ? 'Pause' : hasStarted ? 'Resume' : 'Start my focus'}</Button><Button variant="outline" size="icon" aria-label="Reset timer" title="Reset timer" onClick={() => reset()}><RotateCcw /></Button></div>
-    <p className="timer-note">This time is a gentle invitation, not a test.<br />You can stop whenever you like. Trying counts.</p>
+    <p className="timer-note">An invitation, not a test. Stop whenever you like.</p>
   </>;
 }
