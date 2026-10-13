@@ -24,7 +24,7 @@ const thoughts = [
   { values: ['Integrity', 'Independence'], text: 'A choice that feels true to you does not need to impress anyone else.', attribution: 'An original PurposeLock reflection' },
 ];
 export function getThought(selected: string[]) {
-  return thoughts.find(thought => thought.values.some(value => selected.includes(value))) ?? thoughts[1];
+  return thoughts.find(thought => thought.values.some(value => selected.includes(value))) ?? { values: ['Growth'], text: 'One small choice is enough for today.', attribution: 'An original PurposeLock reflection' };
 }
 export function getActionAnalysis(selected: string[], action: string, memory: string) {
   const matched = values.find(value => value.action === action && selected.includes(value.name));
