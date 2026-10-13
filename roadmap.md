@@ -6,3 +6,6 @@
 - [x] Test complete desktop and mobile flows; do not publish.
 - [x] Personalize the ending with retained photos/quote, analysis, next steps, and saved reflection.
 - [x] Verify desktop/mobile endings with photos/reflection and without either; do not publish.
+- [ ] Evolve the flow into five illustrated Calm Path stops with short interactive screens.
+- [ ] Add a landscape-integrated Values Postcard with accessible front/back, photos, quote, action, analysis, next steps, and reflection.
+- [ ] Verify desktop/mobile flows with and without photos/reflection, timer controls, and cleanup; leave unpublished and share preview URL.
