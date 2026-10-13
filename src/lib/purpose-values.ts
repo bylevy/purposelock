@@ -16,8 +16,8 @@ export function getAffirmation(selected: string[]) {
 }
 
 const thoughts = [
-  { values: ['Compassion'], text: 'No act of kindness, no matter how small, is ever wasted.', attribution: 'Aesop, “The Lion and the Mouse”' },
-  { values: ['Growth', 'Courage'], text: 'The journey of a thousand miles begins with a single step.', attribution: 'Traditionally attributed to Lao Tzu' },
+  { values: ['Compassion'], text: 'A small kindness is a way to make room for what matters, including yourself.', attribution: 'An original PurposeLock reflection' },
+  { values: ['Growth', 'Courage'], text: 'You can grow toward what matters with one small step, even before you feel ready.', attribution: 'An original PurposeLock reflection' },
   { values: ['Family', 'Connection'], text: 'A moment of presence can be a small way of saying: you matter.', attribution: 'An original PurposeLock reflection' },
   { values: ['Health'], text: 'Caring for yourself is meaningful, even when no one else sees it.', attribution: 'An original PurposeLock reflection' },
   { values: ['Curiosity'], text: 'You can begin with a question, not an answer.', attribution: 'An original PurposeLock reflection' },
@@ -32,4 +32,19 @@ export function getActionAnalysis(selected: string[], action: string, memory: st
     ? `This step offers a small way to practice ${matched.name.toLowerCase()}: ${matched.description.toLowerCase()}`
     : `Your chosen step can be a chance to practice what ${selected.length > 3 ? 'these values' : selected.join(', ')} means to you. You decide which connection feels most true.`;
   return `${connection} ${memory.trim() ? 'The memory you shared is a reminder of a moment when you felt connected to what matters. This action can be another moment, without needing to repeat or outdo the past.' : 'You do not have to act on every value at once. Making room for one today can be enough.'} This is an invitation, not a verdict about who you are.`;
+}
+
+export function getCompletionAnalysis(selected: string[], action: string, reflection: string) {
+  const namedValues = selected.map(value => value.toLowerCase()).join(', ');
+  return `You chose ${namedValues} as directions that matter to you, and made space to try this step: “${action}” ${reflection.trim() ? 'The reflection you wrote below is your own account of that moment. You might notice where the action felt connected to those values, or what you would like to try differently.' : 'Even without writing anything down, you can notice whether this step felt connected to those values and what you might want to carry forward.'} You decide what this moment means; it does not have to prove anything about your worth.`;
+}
+
+export function getNextSteps(selected: string[], action: string) {
+  const matched = values.find(value => selected.includes(value.name) && value.action === action);
+  const direction = matched?.name.toLowerCase() ?? selected[0]?.toLowerCase() ?? 'what matters to you';
+  return [
+    `This week, try “${action}” again, or make it smaller if that feels kinder. Let ${direction} be a direction, not a deadline.`,
+    'If it feels helpful, jot down your thought to carry with you or keep one of your own photos somewhere visible.',
+    `After another try, take a quiet moment to ask: how did this connect with ${direction}, and what would I like to try next?`,
+  ];
 }

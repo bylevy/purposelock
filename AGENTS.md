@@ -14,3 +14,4 @@
 - Keep value definitions, affirmation/action mappings, curated quotes, and supportive analysis in `src/lib/purpose-values.ts`, separate from the flow UI, so all steps use the same content.
 - Keep countdown state inside the focus-only timer component and duration in the parent flow; unmounting clears intervals and re-entry begins a fresh countdown without losing the chosen duration.
 - Manage session photos with browser object URLs in the photo hook and revoke them on removal, reset, and unmount so no uploads or retained previews are needed.
+- Store the selected thought in parent React state and pass it with photos and reflection to the ending component, so the same personal reminders survive step navigation until reset.

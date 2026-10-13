@@ -156,6 +156,20 @@
 .photo-preview { position: relative; margin: 0; min-width: 0; aspect-ratio: 1; background: var(--secondary); border-radius: 8px; overflow: hidden; }
 .photo-preview img { width: 100%; height: 100%; object-fit: cover; font-size: 11px; }
 .photo-remove { position: absolute; top: 6px; right: 6px; width: 30px; height: 30px; }
+.ending-gallery .photo-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ending-gallery .photo-preview { aspect-ratio: 4 / 3; background: var(--muted); }
+.ending-gallery .photo-preview:only-child { grid-column: 1 / -1; aspect-ratio: 3 / 2; }
+.ending-gallery .photo-preview img { object-fit: contain; }
+.ending-photo-empty { display: flex; align-items: center; gap: 16px; padding: 22px 0; border-block: 1px solid var(--border); }
+.ending-photo-empty svg { flex-shrink: 0; width: 26px; color: var(--hill-front); }
+.ending-photo-empty p { font-size: 13px; line-height: 1.8; color: var(--muted-foreground); }
+.purpose-ending { overflow-wrap: anywhere; }
+.ending-next-steps, .ending-reflection { margin-top: 30px; }
+.ending-next-steps h2, .ending-reflection h2 { font-family: var(--font-serif); font-size: 23px; font-weight: 400; margin-bottom: 14px; }
+.ending-next-steps ul { padding-left: 20px; margin: 0; display: grid; gap: 13px; color: var(--muted-foreground); font-size: 13px; line-height: 1.9; }
+.ending-next-steps li::marker { color: var(--gold); }
+.ending-reflection blockquote { margin: 0; }
+.ending-actions { text-align: center; margin-top: 34px; }
 .thought-card { margin: 26px 0; padding: 22px 26px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); }
 .thought-card h2, .values-analysis h2 { font-size: 12px; font-weight: 600; margin-bottom: 12px; }
 .thought-card blockquote { font-family: var(--font-serif); font-size: 21px; line-height: 1.6; margin: 0; }
