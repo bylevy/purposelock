@@ -58,7 +58,7 @@ A short sequence of single-purpose screens. This is the clearest and lowest-read
 
 8. **Ending**
    - Keep the exact heading “What you did it all for”.
-   - Reveal in order: photos, quote, reflection, then one concise values/action connection.
+   - Reveal in order: photos, quote, one concise values/action connection, next steps, then any saved reflection.
    - Present “Your next steps” as two tap-sized suggestion rows rather than a paragraph list.
    - Keep “Begin again”; only that action clears session photos and words.
 
@@ -117,8 +117,7 @@ The student gradually builds one personal visual postcard. Photos are the emotio
 
 8. **Ending**
    - Exact heading: “What you did it all for”.
-   - Display the finished postcard prominently: photo collage, values, quote, action, and optional reflection.
-   - Place two brief next-step suggestions below it.
+   - Display the finished postcard as an unframed reading sequence: photos, quote, brief values/action connection, two next-step suggestions, and optional reflection.
    - Keep “Begin again”.
 
 ### Interaction details
@@ -174,9 +173,9 @@ A lightly exploratory path where students tap one stepping stone at a time; it f
 
 8. **Ending**
    - Exact heading: “What you did it all for”.
-   - Show the photo gallery first, then the persistent quote and optional reflection.
+   - Show the photo gallery first, then the persistent quote.
    - Analysis references all chosen values, with the lead value as today’s direction—not as a personality label.
-   - Show 2–3 practical next steps and “Begin again”.
+   - Follow with 2–3 practical next steps, any saved reflection, and “Begin again”.
 
 ### Interaction details
 - Use path growth only as navigation feedback, never as a reward meter.
@@ -194,6 +193,8 @@ Proceed with **Concept 1: One Quiet Choice at a Time**, borrowing the persistent
 
 ## Technical boundaries for any chosen concept
 
+- Without photos, show a gentle optional invitation to add one next time; omit the saved-reflection section when there is no written reflection.
+- Keep quotes short and original, labeled “An original PurposeLock reflection”; preserve the selected wording through the ending. Keep analysis to two supportive sentences, grounded in the action and any reflection without claiming psychological outcomes.
 - Keep the whole flow client-side at `/`; no login, database, API, or upload.
 - Retain photos, selected values, the exact chosen quote, action, and reflection in parent React state until “Begin again”.
 - Keep timer countdown isolated so navigating away stops its interval safely.
