@@ -36,12 +36,12 @@ export function PhotoBoard({ photos, onRemove }: { photos: Photo[]; onRemove?: (
 export function PhotoPicker({ photos, photoError, addPhotos, removePhoto }: ReturnType<typeof useSessionPhotos>) {
   const input = useRef<HTMLInputElement>(null);
   return <section className="field-group" aria-labelledby="photos-heading">
-    <h2 className="field-label" id="photos-heading">A few reminders of who you want to be <span>(optional)</span></h2>
-    <p className="action-subtext">Moments, people, places, goals, or little reminders that embody your values.</p>
+    <h2 className="field-label" id="photos-heading">Your visual reminders <span>(optional)</span></h2>
+    <p className="action-subtext">People, places, moments, or hopes.</p>
     <input className="sr-only" ref={input} id="values-photos" type="file" accept="image/*" multiple aria-label="Add photos that represent your values" onChange={event => { addPhotos(event.target.files); event.target.value = ''; }} />
     <Button variant="outline" onClick={() => input.current?.click()}><ImagePlus />Add photos</Button>
     {photos.length > 0 && <PhotoBoard photos={photos} onRemove={removePhoto} />}
     {photoError && <p role="alert" className="error-message">{photoError}</p>}
-    <p className="privacy-note">Photos stay in this browser session. They are never uploaded or permanently saved, and clear when you leave or begin again.</p>
+    <p className="privacy-note">Only in this visit. Never uploaded. Cleared when you leave or begin again.</p>
   </section>;
 }
