@@ -17,7 +17,8 @@ export function PurposeEnding({ photos, thought, selected, action, reflection, o
   const [turned, setTurned] = useState(false);
   return <section className="purpose-ending" aria-labelledby="ending-heading">
     <div className="step-heading destination-heading"><div className="eyebrow"><Leaf />You arrived</div><h1 id="ending-heading">What you did it all for</h1><p>A small keepsake of what matters to you.</p></div>
-    <div className={`values-postcard ${turned ? 'is-turned' : ''}`}>
+    <p className="sr-only" role="status">{turned ? 'Postcard back: your analysis, next steps, and reflection.' : 'Postcard front: your photos, values, thought, and action.'}</p>
+    <div id="values-postcard" className={`values-postcard ${turned ? 'is-turned' : ''}`}>
       {!turned ? <article className="postcard-face postcard-front" aria-label="Front of your Values Postcard">
         <div className="postcard-topline"><span>Values Postcard</span><Stamp aria-hidden="true" /></div>
         <div className={`postcard-collage collage-${Math.min(photos.length, 4)}`}>
@@ -35,7 +36,7 @@ export function PurposeEnding({ photos, thought, selected, action, reflection, o
         {reflection.trim() && <section className="ending-reflection" aria-labelledby="saved-reflection-heading"><h2 id="saved-reflection-heading">What you noticed</h2><blockquote>{reflection.trim()}</blockquote></section>}
       </article>}
     </div>
-    <div className="postcard-turn"><Button variant="outline" aria-pressed={turned} onClick={() => setTurned(current => !current)}>{turned ? <ArrowLeft /> : <ArrowRight />}{turned ? 'Turn postcard back' : 'Turn postcard over'}</Button></div>
+    <div className="postcard-turn"><Button variant="outline" aria-controls="values-postcard" aria-pressed={turned} onClick={() => setTurned(current => !current)}>{turned ? <ArrowLeft /> : <ArrowRight />}{turned ? 'Turn postcard back' : 'Turn postcard over'}</Button></div>
     <div className="ending-actions"><Button variant="reset" onClick={onBeginAgain}>Begin again<Sprout /></Button><p className="privacy-note">Your photos and words stay here for this visit. Beginning again clears them, not your worth.</p></div>
   </section>;
 }
