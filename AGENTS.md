@@ -15,3 +15,4 @@
 - Keep countdown state inside the focus-only timer component and duration in the parent flow; unmounting clears intervals and re-entry begins a fresh countdown without losing the chosen duration.
 - Manage session photos with browser object URLs in the photo hook and revoke them on removal, reset, and unmount so no uploads or retained previews are needed.
 - Store the selected thought in parent React state and pass it with photos and reflection to the ending component, so the same personal reminders survive step navigation until reset.
+- Model the experience as five visual Calm Path stops while allowing focus and reflection to be substeps of the action stop, so progress stays simple without coupling timer state to navigation.
