@@ -6,6 +6,7 @@ import { PurposeLandscape } from '@/components/purpose-landscape';
 import { values, getAffirmation, getThought, getActionAnalysis } from '@/lib/purpose-values';
 import { FocusTimer } from '@/components/purpose-timer';
 import { PhotoPicker, PhotoBoard, useSessionPhotos } from '@/components/purpose-photos';
+import { PurposeEnding } from '@/components/purpose-ending';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -41,16 +42,16 @@ function PurposeLock() {
   const photoSession = useSessionPhotos();
   const [reflection, setReflection] = useState('');
   const [saved, setSaved] = useState(false);
+  const [thought, setThought] = useState<ReturnType<typeof getThought> | null>(null);
   const mainRef = useRef<HTMLElement>(null);
   const finalAction = useCustom ? customAction.trim() : action;
   const suggestions = values.filter(value => selected.includes(value.name));
   const visibleSuggestions = showAllActions ? suggestions : suggestions.slice(0, 3);
-  const thought = getThought(selected);
 
   useEffect(() => {
     if (step > 0) mainRef.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [step]);
+  }, [step, saved]);
 
   function goTo(next: number) { setError(''); setStep(next); }
   function toggleValue(name: string) {
@@ -59,7 +60,7 @@ function PurposeLock() {
   }
   function resetFlow() {
     photoSession.clearPhotos(); setMinutes(5); setShowAllActions(false); setStep(0); setSelected([]); setMemory(''); setAction(''); setCustomAction(''); setUseCustom(false);
-    setError(''); setReflection(''); setSaved(false);
+    setError(''); setReflection(''); setSaved(false); setThought(null);
   }
 
   return <div className="purpose-shell">
@@ -91,7 +92,7 @@ function PurposeLock() {
         <div className="field-group"><label className="field-label" htmlFor="memory">When have you already lived one of these values? <span>(optional)</span></label><textarea id="memory" className="purpose-textarea" value={memory} onChange={event => setMemory(event.target.value)} placeholder="Maybe you showed up for a friend, tried something new, or gave yourself a little grace…" maxLength={3000} /></div>
         <PhotoPicker {...photoSession} />
         {error && <p className="error-message" role="alert">{error}</p>}
-        <div className="step-actions"><Button variant="ghost" className="justify-self-start" onClick={() => goTo(0)}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => { if (!selected.length) { setError('Choose at least one value to carry with you.'); return; } setShowAllActions(false); if (!useCustom && !values.some(value => selected.includes(value.name) && value.action === action)) setAction(''); goTo(2); }}>Carry these with me<ArrowRight /></Button></div>
+        <div className="step-actions"><Button variant="ghost" className="justify-self-start" onClick={() => goTo(0)}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => { if (!selected.length) { setError('Choose at least one value to carry with you.'); return; } setThought(getThought(selected)); setShowAllActions(false); if (!useCustom && !values.some(value => selected.includes(value.name) && value.action === action)) setAction(''); goTo(2); }}>Carry these with me<ArrowRight /></Button></div>
       </>}
       {step === 2 && <>
         <div className="step-heading"><div className="eyebrow"><Heart />Already within you</div><h1>You’re not starting from nothing.</h1><p>The person you want to become begins with the values you already hold.</p></div>
@@ -101,7 +102,7 @@ function PurposeLock() {
           {memory.trim() && <p>You’ve already lived these values. In your own words: “{memory.trim()}” That moment is part of your story, not something you need to earn again.</p>}
           <p>Your worth is not measured by your productivity. You don’t need to prove anything here. This is simply a chance to act on what matters to you.</p>
         </section>
-        <section className="thought-card" aria-labelledby="thought-heading"><h2 id="thought-heading">A thought to carry with you</h2><blockquote>“{thought.text}”</blockquote><p>— {thought.attribution}</p></section>
+        {thought && <section className="thought-card" aria-labelledby="thought-heading"><h2 id="thought-heading">A thought to carry with you</h2><blockquote>“{thought.text}”</blockquote><p>— {thought.attribution}</p></section>}
         <h2 className="action-heading">One small step. Your kind of step.</h2><p className="action-subtext">Choose something that feels doable, not impressive.</p>
         <div className="action-options" role="group" aria-label="Choose your small action">{visibleSuggestions.map(value => <Button key={value.name} variant="action" className={!useCustom && action === value.action ? 'selected' : ''} aria-pressed={!useCustom && action === value.action} onClick={() => { setAction(value.action); setUseCustom(false); setError(''); }}><span className="radio-dot" aria-hidden="true" />{value.action}</Button>)}
           {suggestions.length > 3 && <Button variant="ghost" size="sm" aria-expanded={showAllActions} onClick={() => setShowAllActions(current => !current)}>{showAllActions ? 'Show fewer suggestions' : `Explore ${suggestions.length - 3} more value-led steps`}</Button>}
@@ -121,14 +122,14 @@ function PurposeLock() {
         <div className="mt-5"><Button variant="ghost" size="sm" onClick={() => { goTo(2); }}><ArrowLeft />Choose a different step</Button></div>
       </>}
       {step === 4 && <>
-        <div className="step-heading"><div className="eyebrow"><Sprout />Let it take root</div><h1>{saved ? 'A small step is still a step.' : 'What did this moment mean to you?'}</h1>{!saved && <p>No score, no judgment. Just a moment to notice.</p>}</div>
+        {!saved && <div className="step-heading"><div className="eyebrow"><Sprout />Let it take root</div><h1>What did this moment mean to you?</h1><p>No score, no judgment. Just a moment to notice.</p></div>}
         {!saved ? <><div className="reflection-context"><span>You made space for {selected.join(', ')}</span><p>{finalAction}</p></div>
           <div className="field-group"><label className="field-label" htmlFor="reflection">How did this action reflect your values, or the person you want to become?</label><textarea id="reflection" className="purpose-textarea" value={reflection} onChange={event => { setReflection(event.target.value); setError(''); }} placeholder="I want to be someone who… This small step felt like…" rows={5} maxLength={5000} /></div>
           {error && <p className="error-message" role="alert">{error}</p>}
           <div className="step-actions"><Button variant="ghost" className="justify-self-start" onClick={() => goTo(3)}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => { if (!reflection.trim()) { setError('Add a few words to save your reflection, or choose “Finish without writing”.'); return; } setSaved(true); }}>Save my reflection<Check /></Button></div>
           <div className="text-center mt-4"><Button variant="ghost" size="sm" onClick={() => { setReflection(''); setSaved(true); setError(''); }}>Finish without writing</Button></div>
           <p className="privacy-note"><ShieldCheck className="inline size-3 mr-1" />Just for you. Your words stay here and clear when you leave or start again.</p>
-        </> : <section className="saved-state" aria-label="Reset complete"><div className="saved-icon"><Check /></div><h2>{reflection.trim() ? 'Your reflection is saved for this visit.' : 'You showed up for yourself.'}</h2><p>You made a little room for {selected.join(', ')}. Becoming isn’t a finish line. It’s these small moments of returning to yourself.</p>{reflection.trim() && <blockquote className="saved-reflection">{reflection.trim()}</blockquote>}<Button variant="reset" onClick={resetFlow}>Begin again<Sprout /></Button><p className="privacy-note">A fresh beginning clears this reflection. Your worth stays.</p></section>}
+        </> : thought && <PurposeEnding photos={photoSession.photos} thought={thought} selected={selected} action={finalAction} reflection={reflection} onBeginAgain={resetFlow} />}
       </>}
     </main>}
     <footer className="site-footer"><Sprout aria-hidden="true" /><span>PurposeLock · A prototype for values-led action</span></footer>
