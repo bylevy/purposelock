@@ -1,5 +1,6 @@
 # PurposeLock
-- [x] Build welcome and original nature illustration.
-- [x] Build values, personalized affirmation, and small action selection.
-- [x] Build working focus timer and reflection/reset flow.
-- [x] Verify complete flow and mobile layout.
+- [x] Remove value cap and streamline multiple-value affirmations/actions.
+- [x] Add session-only optional photos with preview cleanup.
+- [x] Add matched quote and values-in-action analysis.
+- [x] Add adjustable accurate timer with safe navigation/reset.
+- [x] Test complete desktop and mobile flows; do not publish.

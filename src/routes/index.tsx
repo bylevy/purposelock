@@ -1,9 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowLeft, Sprout, Heart, Compass, Sparkles, Clock3, Check, Quote, Play, Pause, RotateCcw, Leaf, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Sprout, Heart, Compass, Sparkles, Clock3, Check, Quote, Leaf, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PurposeLandscape } from '@/components/purpose-landscape';
-import { values, getAffirmation } from '@/lib/purpose-values';
+import { values, getAffirmation, getThought, getActionAnalysis } from '@/lib/purpose-values';
+import { FocusTimer } from '@/components/purpose-timer';
+import { PhotoPicker, PhotoBoard, useSessionPhotos } from '@/components/purpose-photos';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -34,27 +36,16 @@ function PurposeLock() {
   const [customAction, setCustomAction] = useState('');
   const [useCustom, setUseCustom] = useState(false);
   const [error, setError] = useState('');
-  const [seconds, setSeconds] = useState(300);
-  const [running, setRunning] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
+  const [minutes, setMinutes] = useState(5);
+  const [showAllActions, setShowAllActions] = useState(false);
+  const photoSession = useSessionPhotos();
   const [reflection, setReflection] = useState('');
   const [saved, setSaved] = useState(false);
-  const deadline = useRef(0);
   const mainRef = useRef<HTMLElement>(null);
   const finalAction = useCustom ? customAction.trim() : action;
   const suggestions = values.filter(value => selected.includes(value.name));
-
-  useEffect(() => {
-    if (!running) return;
-    const tick = () => {
-      const remaining = Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000));
-      setSeconds(remaining);
-      if (remaining === 0) setRunning(false);
-    };
-    tick();
-    const interval = window.setInterval(tick, 250);
-    return () => window.clearInterval(interval);
-  }, [running]);
+  const visibleSuggestions = showAllActions ? suggestions : suggestions.slice(0, 3);
+  const thought = getThought(selected);
 
   useEffect(() => {
     if (step > 0) mainRef.current?.focus({ preventScroll: true });
@@ -64,18 +55,11 @@ function PurposeLock() {
   function goTo(next: number) { setError(''); setStep(next); }
   function toggleValue(name: string) {
     setError('');
-    setSelected(current => current.includes(name) ? current.filter(item => item !== name) : current.length < 3 ? [...current, name] : current);
+    setSelected(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name]);
   }
   function resetFlow() {
-    setRunning(false); setStep(0); setSelected([]); setMemory(''); setAction(''); setCustomAction(''); setUseCustom(false);
-    setError(''); setSeconds(300); setHasStarted(false); setReflection(''); setSaved(false);
-  }
-  function toggleTimer() {
-    if (running) {
-      setSeconds(Math.max(0, Math.ceil((deadline.current - Date.now()) / 1000))); setRunning(false);
-    } else if (seconds > 0) {
-      deadline.current = Date.now() + seconds * 1000; setRunning(true); setHasStarted(true);
-    }
+    photoSession.clearPhotos(); setMinutes(5); setShowAllActions(false); setStep(0); setSelected([]); setMemory(''); setAction(''); setCustomAction(''); setUseCustom(false);
+    setError(''); setReflection(''); setSaved(false);
   }
 
   return <div className="purpose-shell">
@@ -99,26 +83,32 @@ function PurposeLock() {
     </main> : <main ref={mainRef} tabIndex={-1} className={`experience outline-none ${step === 3 ? 'focus-experience' : ''}`}>
       {step <= 3 && <Progress step={step} />}
       {step === 1 && <>
-        <div className="step-heading"><div className="eyebrow"><Compass />Find your north</div><h1>What feels like you?</h1><p>Choose up to three values you want to make space for.<br />There are no right answers. Just what matters to you.</p></div>
-        <div className="value-count"><span>Your core values</span><span aria-live="polite">{selected.length} of 3 selected</span></div>
-        <div className="values-grid" role="group" aria-label="Choose up to three core values">{values.map(value => <Button key={value.name} variant="value" className={selected.includes(value.name) ? 'selected' : ''} aria-pressed={selected.includes(value.name)} disabled={selected.length === 3 && !selected.includes(value.name)} onClick={() => toggleValue(value.name)}>
+        <div className="step-heading"><div className="eyebrow"><Compass />Find your north</div><h1>What feels like you?</h1><p>Choose every value you genuinely identify with.<br />There are no right answers. Just what matters to you.</p></div>
+        <div className="value-count"><span>Your core values</span><span aria-live="polite">{selected.length} selected</span></div>
+        <div className="values-grid" role="group" aria-label="Choose your core values">{values.map(value => <Button key={value.name} variant="value" className={selected.includes(value.name) ? 'selected' : ''} aria-pressed={selected.includes(value.name)} onClick={() => toggleValue(value.name)}>
           <span className="value-title"><value.icon />{value.name}</span><span className="value-description">{value.description}</span>{selected.includes(value.name) && <Check className="selected-check" />}
         </Button>)}</div>
         <div className="field-group"><label className="field-label" htmlFor="memory">When have you already lived one of these values? <span>(optional)</span></label><textarea id="memory" className="purpose-textarea" value={memory} onChange={event => setMemory(event.target.value)} placeholder="Maybe you showed up for a friend, tried something new, or gave yourself a little grace…" maxLength={3000} /></div>
+        <PhotoPicker {...photoSession} />
         {error && <p className="error-message" role="alert">{error}</p>}
-        <div className="step-actions"><Button variant="ghost" className="justify-self-start" onClick={() => goTo(0)}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => { if (!selected.length) { setError('Choose at least one value to carry with you.'); return; } setAction(''); goTo(2); }}>Carry these with me<ArrowRight /></Button></div>
+        <div className="step-actions"><Button variant="ghost" className="justify-self-start" onClick={() => goTo(0)}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => { if (!selected.length) { setError('Choose at least one value to carry with you.'); return; } setShowAllActions(false); if (!useCustom && !values.some(value => selected.includes(value.name) && value.action === action)) setAction(''); goTo(2); }}>Carry these with me<ArrowRight /></Button></div>
       </>}
       {step === 2 && <>
         <div className="step-heading"><div className="eyebrow"><Heart />Already within you</div><h1>You’re not starting from nothing.</h1><p>The person you want to become begins with the values you already hold.</p></div>
+        <div className="value-tags">{selected.map(value => <span className="value-tag" key={value}>{value}</span>)}</div>
+        {photoSession.photos.length > 0 && <section aria-label="Your visual reminders"><PhotoBoard photos={photoSession.photos} /></section>}
         <section className="affirmation" aria-label="Your personal affirmation"><Quote className="quote-icon" /><h2>{getAffirmation(selected)}</h2>
           {memory.trim() && <p>You’ve already lived these values. In your own words: “{memory.trim()}” That moment is part of your story, not something you need to earn again.</p>}
           <p>Your worth is not measured by your productivity. You don’t need to prove anything here. This is simply a chance to act on what matters to you.</p>
         </section>
+        <section className="thought-card" aria-labelledby="thought-heading"><h2 id="thought-heading">A thought to carry with you</h2><blockquote>“{thought.text}”</blockquote><p>— {thought.attribution}</p></section>
         <h2 className="action-heading">One small step. Your kind of step.</h2><p className="action-subtext">Choose something that feels doable, not impressive.</p>
-        <div className="action-options" role="group" aria-label="Choose your small action">{suggestions.map(value => <Button key={value.name} variant="action" className={!useCustom && action === value.action ? 'selected' : ''} aria-pressed={!useCustom && action === value.action} onClick={() => { setAction(value.action); setUseCustom(false); setError(''); }}><span className="radio-dot" aria-hidden="true" />{value.action}</Button>)}
+        <div className="action-options" role="group" aria-label="Choose your small action">{visibleSuggestions.map(value => <Button key={value.name} variant="action" className={!useCustom && action === value.action ? 'selected' : ''} aria-pressed={!useCustom && action === value.action} onClick={() => { setAction(value.action); setUseCustom(false); setError(''); }}><span className="radio-dot" aria-hidden="true" />{value.action}</Button>)}
+          {suggestions.length > 3 && <Button variant="ghost" size="sm" aria-expanded={showAllActions} onClick={() => setShowAllActions(current => !current)}>{showAllActions ? 'Show fewer suggestions' : `Explore ${suggestions.length - 3} more value-led steps`}</Button>}
           <Button variant="action" className={useCustom ? 'selected' : ''} aria-pressed={useCustom} onClick={() => { setUseCustom(true); setError(''); }}><span className="radio-dot" aria-hidden="true" />I have my own small step in mind.</Button>
         </div>
         {useCustom && <div className="field-group"><label htmlFor="custom-action" className="field-label">What’s your small step?</label><textarea autoFocus id="custom-action" className="purpose-textarea" value={customAction} onChange={event => setCustomAction(event.target.value)} placeholder="One little thing I can try is…" maxLength={500} /></div>}
+        {finalAction && <section className="values-analysis" aria-labelledby="analysis-heading" aria-live="polite"><h2 id="analysis-heading">Your values in action</h2><p>{getActionAnalysis(selected, finalAction, memory)}</p></section>}
         {error && <p className="error-message" role="alert">{error}</p>}
         <div className="step-actions"><Button variant="ghost" className="justify-self-start" onClick={() => goTo(1)}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => { if (!finalAction) { setError('Choose a small action or write one of your own.'); return; } goTo(3); }}>Make a little space<ArrowRight /></Button></div>
       </>}
@@ -126,11 +116,9 @@ function PurposeLock() {
         <div className="step-heading"><div className="eyebrow"><Leaf />A moment for what matters</div><h1>No rush. Just a beginning.</h1></div>
         <div className="value-tags">{selected.map(value => <span key={value} className="value-tag">{value}</span>)}</div>
         <h2 className="focus-action">{finalAction}</h2>
-        <div className="timer-wrap"><svg className="timer-ring" viewBox="0 0 230 230" aria-hidden="true"><circle className="timer-track" cx="115" cy="115" r="108" /><circle className="timer-progress" cx="115" cy="115" r="108" strokeDasharray={678.584} strokeDashoffset={678.584 * (1 - seconds / 300)} /></svg><div><div className="timer-digits" role="timer" aria-label={`${Math.floor(seconds / 60)} minutes ${seconds % 60} seconds remaining`}>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</div><div className="timer-state" aria-live="polite">{seconds === 0 ? 'A little space, made' : running ? 'One moment at a time' : hasStarted ? 'Take your time' : 'Your time to begin'}</div></div></div>
-        <div className="timer-controls"><Button variant="reset" onClick={toggleTimer} disabled={seconds === 0}>{running ? <Pause /> : <Play />}{running ? 'Pause' : hasStarted ? 'Resume' : 'Start my five minutes'}</Button><Button variant="outline" size="icon" aria-label="Reset timer" title="Reset timer" onClick={() => { setRunning(false); setSeconds(300); setHasStarted(false); }}><RotateCcw /></Button></div>
-        <p className="timer-note">Five minutes is a gentle invitation, not a test.<br />You can stop whenever you like. Trying counts.</p>
-        <Button variant="ghost" onClick={() => { setRunning(false); goTo(4); }}>I gave it a try<ArrowRight /></Button>
-        <div className="mt-5"><Button variant="ghost" size="sm" onClick={() => { setRunning(false); goTo(2); }}><ArrowLeft />Choose a different step</Button></div>
+        <FocusTimer minutes={minutes} onDurationChange={setMinutes} />
+        <Button variant="ghost" onClick={() => { goTo(4); }}>I gave it a try<ArrowRight /></Button>
+        <div className="mt-5"><Button variant="ghost" size="sm" onClick={() => { goTo(2); }}><ArrowLeft />Choose a different step</Button></div>
       </>}
       {step === 4 && <>
         <div className="step-heading"><div className="eyebrow"><Sprout />Let it take root</div><h1>{saved ? 'A small step is still a step.' : 'What did this moment mean to you?'}</h1>{!saved && <p>No score, no judgment. Just a moment to notice.</p>}</div>
