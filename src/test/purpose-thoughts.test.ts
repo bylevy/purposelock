@@ -8,7 +8,7 @@ describe('thoughts', () => {
     texts.forEach((t, i) => {
       expect(t.text.length).toBeGreaterThan(20);
       expect(t.attribution).toBe('An original PurposeLock reflection');
-      const ending = getCompletionAnalysis(combos[i], values[0].action, 'x') + getNextSteps(combos[i], values[0].action).join(' ');
+      const ending = getCompletionAnalysis(combos[i]!, values[0]!.action, 'x') + getNextSteps(combos[i]!, values[0]!.action).join(' ');
       expect(ending).not.toContain(t.text);
     });
     expect(new Set(texts.map(t => t.text)).size).toBe(combos.length);

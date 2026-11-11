@@ -54,15 +54,15 @@ function listJoin(items: string[]) {
 
 export function getThought(selected: string[]) {
   const chosen = ORDER.filter(name => selected.includes(name));
-  if (chosen.length === 0) return { values: ['Growth'], text: singleThoughts.Growth, attribution: ATTRIBUTION };
-  if (chosen.length === 1) return { values: chosen, text: singleThoughts[chosen[0]], attribution: ATTRIBUTION };
+  if (chosen.length === 0) return { values: ['Growth'], text: singleThoughts['Growth'] ?? '', attribution: ATTRIBUTION };
+  if (chosen.length === 1) return { values: chosen, text: singleThoughts[chosen[0] ?? 'Growth'] ?? '', attribution: ATTRIBUTION };
   if (chosen.length === 2) {
     const pair = pairThoughts[`${chosen[0]}+${chosen[1]}`] ?? pairThoughts[`${chosen[1]}+${chosen[0]}`];
     if (pair) return { values: chosen, text: pair, attribution: ATTRIBUTION };
   }
   if (chosen.length === ORDER.length) return { values: chosen, text: 'Every value you hold is part of one life; today, a single honest step can serve them all.', attribution: ATTRIBUTION };
   const names = chosen.map(name => name.toLowerCase());
-  const ways = chosen.map(name => verbs[name]);
+  const ways = chosen.map(name => verbs[name] ?? name.toLowerCase());
   const text = chosen.length <= 3
     ? `The urge to ${listJoin(ways)} comes from the same root, so one small step can nourish ${chosen.length === 2 ? 'both' : 'all three'}.`
     : `${listJoin(names).replace(/^./, c => c.toUpperCase())} are not separate errands; they are one way of living, practiced a little at a time.`;
