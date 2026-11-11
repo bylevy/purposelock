@@ -11,20 +11,62 @@ export const values = [
   { name: 'Independence', description: 'Trusting your own voice and choices.', icon: Sun, affirmation: 'Your voice matters, and you are allowed to choose your own path.', action: 'Make one small choice today based on what you genuinely need.' },
 ];
 export function getAffirmation(selected: string[]) {
-  if (selected.length > 1) return 'These values are already part of your story. One small choice can give them a little space today.';
-  return values.find(value => selected.includes(value.name))?.affirmation ?? 'One small choice is enough for today.';
+  if (selected.length > 1) return `${selected.length} values chose you back today. You only need to honor one of them next.`;
+  return values.find(value => selected.includes(value.name))?.affirmation ?? 'Starting small still counts as starting.';
 }
 
-const thoughts = [
-  { values: ['Compassion'], text: 'A small kindness is a way to make room for what matters, including yourself.', attribution: 'An original PurposeLock reflection' },
-  { values: ['Growth', 'Courage'], text: 'You can grow toward what matters with one small step, even before you feel ready.', attribution: 'An original PurposeLock reflection' },
-  { values: ['Family', 'Connection'], text: 'A moment of presence can be a small way of saying: you matter.', attribution: 'An original PurposeLock reflection' },
-  { values: ['Health'], text: 'Caring for yourself is meaningful, even when no one else sees it.', attribution: 'An original PurposeLock reflection' },
-  { values: ['Curiosity'], text: 'You can begin with a question, not an answer.', attribution: 'An original PurposeLock reflection' },
-  { values: ['Integrity', 'Independence'], text: 'A choice that feels true to you does not need to impress anyone else.', attribution: 'An original PurposeLock reflection' },
-];
+const ATTRIBUTION = 'An original PurposeLock reflection';
+const ORDER = values.map(value => value.name);
+
+const singleThoughts: Record<string, string> = {
+  Growth: 'Who you are becoming is built in the unremarkable minutes no one applauds.',
+  Compassion: 'Softness toward yourself is not a reward for finishing; it is how you keep going.',
+  Family: 'Belonging is renewed in ordinary gestures: a call returned, a chair pulled closer.',
+  Health: 'Your body has carried you this far. Today it asks for patience, not perfection.',
+  Connection: 'Someone out there would feel lighter just hearing from you.',
+  Courage: 'Fear can ride along. It just does not get to hold the map.',
+  Curiosity: 'Wonder is a door you can open from wherever you are standing.',
+  Integrity: 'When your actions and your quiet convictions meet, you stop arguing with yourself.',
+  Independence: 'Trusting your own judgment is a skill, and every honest choice is practice.',
+};
+
+const pairThoughts: Record<string, string> = {
+  'Growth+Courage': 'Stretching past the familiar feels shaky because it is new, not because you are wrong.',
+  'Compassion+Connection': 'Tenderness travels: the gentleness you show yourself shapes how you show up for others.',
+  'Family+Connection': 'The people who know your laugh deserve your attention, not just your availability.',
+  'Health+Compassion': 'Rest taken kindly is not falling behind; it is tending the ground you grow from.',
+  'Integrity+Independence': 'Your compass works best when you stop borrowing other people’s north.',
+  'Growth+Curiosity': 'Questions are the seeds; learning is simply what happens when you water them.',
+  'Courage+Integrity': 'Standing by what you believe gets steadier each time you say it out loud.',
+  'Family+Compassion': 'Home grows warmer when patience is offered before it is earned.',
+  'Health+Growth': 'Strength gathers slowly, like rings in a tree, one season of care at a time.',
+  'Connection+Courage': 'Reaching out first is a brave act dressed up as an ordinary message.',
+};
+
+const verbs: Record<string, string> = {
+  Growth: 'grow', Compassion: 'care gently', Family: 'show up for home', Health: 'tend your wellbeing', Connection: 'stay close to others',
+  Courage: 'act bravely', Curiosity: 'stay open', Integrity: 'stay true', Independence: 'trust your own voice',
+};
+
+function listJoin(items: string[]) {
+  return items.length < 3 ? items.join(' and ') : `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`;
+}
+
 export function getThought(selected: string[]) {
-  return thoughts.find(thought => thought.values.some(value => selected.includes(value))) ?? { values: ['Growth'], text: 'One small choice is enough for today.', attribution: 'An original PurposeLock reflection' };
+  const chosen = ORDER.filter(name => selected.includes(name));
+  if (chosen.length === 0) return { values: ['Growth'], text: singleThoughts.Growth, attribution: ATTRIBUTION };
+  if (chosen.length === 1) return { values: chosen, text: singleThoughts[chosen[0]], attribution: ATTRIBUTION };
+  if (chosen.length === 2) {
+    const pair = pairThoughts[`${chosen[0]}+${chosen[1]}`] ?? pairThoughts[`${chosen[1]}+${chosen[0]}`];
+    if (pair) return { values: chosen, text: pair, attribution: ATTRIBUTION };
+  }
+  if (chosen.length === ORDER.length) return { values: chosen, text: 'Every value you hold is part of one life; today, a single honest step can serve them all.', attribution: ATTRIBUTION };
+  const names = chosen.map(name => name.toLowerCase());
+  const ways = chosen.map(name => verbs[name]);
+  const text = chosen.length <= 3
+    ? `The urge to ${listJoin(ways)} comes from the same root, so one small step can nourish ${chosen.length === 2 ? 'both' : 'all three'}.`
+    : `${listJoin(names).replace(/^./, c => c.toUpperCase())} are not separate errands; they are one way of living, practiced a little at a time.`;
+  return { values: chosen, text, attribution: ATTRIBUTION };
 }
 export function getActionAnalysis(selected: string[], action: string, memory: string) {
   const matched = values.find(value => value.action === action && selected.includes(value.name));
@@ -45,7 +87,7 @@ export function getNextSteps(selected: string[], action: string) {
   const direction = matched?.name.toLowerCase() ?? selected[0]?.toLowerCase() ?? 'what matters to you';
   return [
     `Try this step again this week, or a smaller version, as a way to practice ${direction}.`,
-    'Keep your thought or one of your photos somewhere you will see it.',
+    'Set one photo as your lock screen or tape a note by your door as a visual cue.',
     `After another try, ask: what felt connected to ${direction}?`,
   ];
 }
