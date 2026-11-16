@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type Photo = { url: string; name: string };
+import type { StoredPhoto } from '@/lib/purpose-storage';
+
+type Photo = StoredPhoto & { url: string };
 export function useSessionPhotos() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [photoError, setPhotoError] = useState('');
@@ -12,7 +14,7 @@ export function useSessionPhotos() {
     if (!files) return;
     const images = Array.from(files).filter(file => file.type.startsWith('image/') && file.size <= 15 * 1024 * 1024);
     setPhotoError(images.length < files.length ? 'Please choose image files up to 15 MB each. Other files were skipped.' : '');
-    const added = images.map(file => ({ url: URL.createObjectURL(file), name: file.name }));
+    const added = images.map(file => ({ url: URL.createObjectURL(file), name: file.name, blob: file }));
     current.current = [...current.current, ...added]; setPhotos(current.current);
   }
   function removePhoto(url: string) {
@@ -23,7 +25,12 @@ export function useSessionPhotos() {
     current.current.forEach(photo => URL.revokeObjectURL(photo.url));
     current.current = []; setPhotos([]); setPhotoError('');
   }
-  return { photos, photoError, addPhotos, removePhoto, clearPhotos };
+  function restorePhotos(saved: StoredPhoto[]) {
+    current.current.forEach(photo => URL.revokeObjectURL(photo.url));
+    current.current = saved.map(photo => ({ ...photo, url: URL.createObjectURL(photo.blob) }));
+    setPhotos(current.current);
+  }
+  return { photos, photoError, addPhotos, removePhoto, clearPhotos, restorePhotos };
 }
 
 export function PhotoBoard({ photos, onRemove }: { photos: Photo[]; onRemove?: (url: string) => void }) {
@@ -33,7 +40,7 @@ export function PhotoBoard({ photos, onRemove }: { photos: Photo[]; onRemove?: (
   </figure>)}</div>;
 }
 
-export function PhotoPicker({ photos, photoError, addPhotos, removePhoto }: ReturnType<typeof useSessionPhotos>) {
+export function PhotoPicker({ photos, photoError, addPhotos, removePhoto, saving = false }: ReturnType<typeof useSessionPhotos> & { saving?: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   return <section className="field-group" aria-labelledby="photos-heading">
     <h2 className="field-label" id="photos-heading">Your visual reminders <span>(optional)</span></h2>
@@ -42,6 +49,6 @@ export function PhotoPicker({ photos, photoError, addPhotos, removePhoto }: Retu
     <Button variant="outline" onClick={() => input.current?.click()}><ImagePlus />Add photos</Button>
     {photos.length > 0 && <PhotoBoard photos={photos} onRemove={removePhoto} />}
     {photoError && <p role="alert" className="error-message">{photoError}</p>}
-    <p className="privacy-note">Only in this visit. Never uploaded. Cleared when you leave or begin again.</p>
+    <p className="privacy-note">{saving ? 'Saved only in this browser on this device. Never uploaded.' : 'Only in memory for this visit. Never uploaded or saved. Leaving clears these photos.'}</p>
   </section>;
 }

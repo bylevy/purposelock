@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { Clock3, Play, Pause, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export function FocusTimer({ minutes, onDurationChange }: { minutes: number; onDurationChange: (minutes: number) => void }) {
-  const [seconds, setSeconds] = useState(minutes * 60);
+export function FocusTimer({ minutes, onDurationChange, initialSeconds, onRemainingChange }: { minutes: number; onDurationChange: (minutes: number) => void; initialSeconds: number; onRemainingChange: (seconds: number) => void }) {
+  const [seconds, setSeconds] = useState(initialSeconds);
   const [running, setRunning] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
+  const [hasStarted, setHasStarted] = useState(initialSeconds < minutes * 60);
   const [custom, setCustom] = useState(![5, 10, 15, 25].includes(minutes));
   const [customMinutes, setCustomMinutes] = useState(String(minutes));
   const deadline = useRef(0);
@@ -21,6 +21,8 @@ export function FocusTimer({ minutes, onDurationChange }: { minutes: number; onD
     tick(); const interval = window.setInterval(tick, 250);
     return () => window.clearInterval(interval);
   }, [running]);
+
+  useEffect(() => { onRemainingChange(seconds); }, [seconds, onRemainingChange]);
 
   function reset(duration = minutes) { setRunning(false); setHasStarted(false); setSeconds(duration * 60); }
   function chooseDuration(duration: number) { reset(duration); onDurationChange(duration); }

@@ -9,3 +9,6 @@
 - [x] Evolve the flow into five illustrated Calm Path stops with short interactive screens.
 - [x] Add a landscape-integrated Values Postcard with accessible front/back, photos, quote, action, analysis, next steps, and reflection.
 - [x] Verify desktop/mobile flows with and without photos/reflection, timer controls, and cleanup; leave unpublished and share preview URL.
+- [x] Add explicit opt-in device saving and restore progress, timer, postcard, and local photos.
+- [x] Add privacy disclosures and confirmed clearing/Begin again; handle storage failures safely.
+- [x] Test consent off/on, reload, photo removal, clearing/reset, quote continuity, and mobile; do not publish.

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Sprout, ImagePlus, Leaf, Stamp, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSessionPhotos } from '@/components/purpose-photos';
@@ -11,10 +10,12 @@ type EndingProps = {
   action: string;
   reflection: string;
   onBeginAgain: () => void;
+  turned: boolean;
+  onTurn: (turned: boolean) => void;
+  saving: boolean;
 };
 
-export function PurposeEnding({ photos, thought, selected, action, reflection, onBeginAgain }: EndingProps) {
-  const [turned, setTurned] = useState(false);
+export function PurposeEnding({ photos, thought, selected, action, reflection, onBeginAgain, turned, onTurn, saving }: EndingProps) {
   return <section className="purpose-ending" aria-labelledby="ending-heading">
     <div className="step-heading destination-heading"><div className="eyebrow"><Leaf />You arrived</div><h1 id="ending-heading">What you did it all for</h1><p>A small keepsake of what matters to you.</p></div>
     <p className="sr-only" role="status">{turned ? 'Postcard back: your analysis, next steps, and reflection.' : 'Postcard front: your photos, values, thought, and action.'}</p>
@@ -36,7 +37,7 @@ export function PurposeEnding({ photos, thought, selected, action, reflection, o
         {reflection.trim() && <section className="ending-reflection" aria-labelledby="saved-reflection-heading"><h2 id="saved-reflection-heading">What you noticed</h2><blockquote>{reflection.trim()}</blockquote></section>}
       </article>}
     </div>
-    <div className="postcard-turn"><Button variant="outline" aria-controls="values-postcard" aria-pressed={turned} onClick={() => setTurned(current => !current)}>{turned ? <ArrowLeft /> : <ArrowRight />}{turned ? 'Turn postcard back' : 'Turn postcard over'}</Button></div>
-    <div className="ending-actions"><Button variant="reset" onClick={onBeginAgain}>Begin again<Sprout /></Button><p className="privacy-note">Your photos and words stay here for this visit. Beginning again clears them, not your worth.</p></div>
+    <div className="postcard-turn"><Button variant="outline" aria-controls="values-postcard" aria-pressed={turned} onClick={() => onTurn(!turned)}>{turned ? <ArrowLeft /> : <ArrowRight />}{turned ? 'Turn postcard back' : 'Turn postcard over'}</Button></div>
+    <div className="ending-actions"><Button variant="reset" onClick={onBeginAgain}>Begin again<Sprout /></Button><p className="privacy-note">{saving ? 'Your postcard is saved only in this browser. Begin again asks before deleting it.' : 'Your photos and words stay in memory for this visit. Begin again asks before clearing them.'}</p></div>
   </section>;
 }

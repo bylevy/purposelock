@@ -7,12 +7,15 @@ import { CalmPath } from '@/components/calm-path';
 import { values, getAffirmation, getThought } from '@/lib/purpose-values';
 import { FocusTimer } from '@/components/purpose-timer';
 import { PhotoPicker, useSessionPhotos } from '@/components/purpose-photos';
+import { DevicePrivacy } from '@/components/device-privacy';
+import { createDeviceStore, loadProgress, type Stage, type ProgressSnapshot } from '@/lib/purpose-storage';
+import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { PurposeEnding } from '@/components/purpose-ending';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
     { title: 'PurposeLock · A small step toward what matters' },
-    { name: 'description', content: 'A gentle values-led journey. Choose what matters, carry a personal reminder, and take one small action. Your photos and reflections stay private in this visit.' },
+    { name: 'description', content: 'A gentle values-led journey. Choose what matters, carry a personal reminder, and take one small action. Your content stays local, with optional saving on your own browser/device.' },
     { property: 'og:title', content: 'PurposeLock · A small step toward what matters' },
     { property: 'og:description', content: 'Follow a calm path from personal values to one meaningful action and your own Values Postcard.' },
     { property: 'og:type', content: 'website' },
@@ -21,7 +24,6 @@ export const Route = createFileRoute('/')({
   component: PurposeLock,
 });
 
-type Stage = 'welcome' | 'values' | 'reminders' | 'thought' | 'action' | 'focus' | 'reflection' | 'ending';
 const stopForStage: Record<Stage, number> = { welcome: 0, values: 1, reminders: 2, thought: 3, action: 4, focus: 4, reflection: 4, ending: 5 };
 
 function PurposeLock() {
@@ -39,6 +41,54 @@ function PurposeLock() {
   const [thought, setThought] = useState<ReturnType<typeof getThought> | null>(null);
   const [revealed, setRevealed] = useState(false);
   const photoSession = useSessionPhotos();
+  const [remaining, setRemaining] = useState(300);
+  const [turned, setTurned] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState('Opening your private visit…');
+  const [confirmBegin, setConfirmBegin] = useState(false);
+  const [deviceStore] = useState(createDeviceStore);
+  const savingRef = useRef(false);
+  const revision = useRef(0);
+  const privacyNote = saving ? 'Saved only in this browser on this device. Never uploaded.' : 'Only in memory for this visit. Nothing you enter is saved or uploaded.';
+
+  useEffect(() => {
+    let active = true;
+    loadProgress().then(saved => {
+      if (!active) return;
+      if (saved) {
+        const data = saved.snapshot;
+        setStage(data.stage); setSelected(data.selected); setMemory(data.memory); setShowMemory(data.showMemory);
+        setAction(data.action); setCustomAction(data.customAction); setUseCustom(data.useCustom); setMinutes(data.minutes);
+        setRemaining(data.remaining); setShowAllActions(data.showAllActions); setReflection(data.reflection);
+        setThought(data.thought); setRevealed(data.revealed); setTurned(data.turned);
+        photoSession.restorePhotos(saved.photos); savingRef.current = true; setSaving(true);
+        setStatus('Saved on this device');
+      } else setStatus('Not saved · this visit only');
+    }).catch(() => { if (active) setStatus('Saved progress could not be opened. Saving is off; clear it or retry later.'); })
+      .finally(() => { if (active) setReady(true); });
+    return () => { active = false; };
+  }, [deviceStore]);
+
+  useEffect(() => {
+    if (!ready || !saving || !savingRef.current) return;
+    const currentRevision = ++revision.current;
+    setStatus('Saving on this device…');
+    const snapshot: ProgressSnapshot = { version: 1, consent: true, stage, selected, memory, showMemory, action, customAction, useCustom, minutes, remaining, showAllActions, reflection, thought, revealed, turned };
+    deviceStore.save(snapshot, photoSession.photos).then(saved => {
+      if (saved && savingRef.current && currentRevision === revision.current) setStatus('Saved on this device');
+    }).catch(() => { if (savingRef.current && currentRevision === revision.current) setStatus('Changes not saved. Device storage may be full or unavailable. Clear saved progress or free space and try again.'); });
+  }, [ready, saving, stage, selected, memory, showMemory, action, customAction, useCustom, minutes, remaining, showAllActions, reflection, thought, revealed, turned, photoSession.photos, deviceStore]);
+
+  async function deleteSaved(reset: boolean) {
+    savingRef.current = false; revision.current++; setSaving(false); setBusy(true);
+    if (reset) resetFlow();
+    try { await deviceStore.clear(); setStatus('Not saved · this visit only'); }
+    catch { setStatus('Could not delete every saved item. Close other PurposeLock tabs and retry Clear my saved progress.'); }
+    finally { setBusy(false); }
+  }
+
   const mainRef = useRef<HTMLElement>(null);
   const finalAction = useCustom ? customAction.trim() : action;
   const suggestions = values.filter(value => selected.includes(value.name));
@@ -49,7 +99,7 @@ function PurposeLock() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [stage]);
 
-  function goTo(next: Stage) { setError(''); setStage(next); }
+  function goTo(next: Stage) { setError(''); if (next === 'action') setRemaining(minutes * 60); setStage(next); }
   function toggleValue(name: string) {
     setError('');
     setSelected(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name]);
@@ -57,7 +107,7 @@ function PurposeLock() {
   function resetFlow() {
     photoSession.clearPhotos(); setStage('welcome'); setSelected([]); setMemory(''); setShowMemory(false);
     setAction(''); setCustomAction(''); setUseCustom(false); setError(''); setMinutes(5);
-    setShowAllActions(false); setReflection(''); setThought(null); setRevealed(false);
+    setShowAllActions(false); setReflection(''); setThought(null); setRevealed(false); setRemaining(300); setTurned(false);
   }
   function carryValues() {
     if (!selected.length) { setError('Choose one value that feels like you.'); return; }
@@ -70,7 +120,8 @@ function PurposeLock() {
 
   return <div className={`purpose-shell ${stage !== 'welcome' ? 'journey-shell' : ''}`}>
     <header className="site-header"><div className="wordmark"><Sprout className="brand-leaf" aria-hidden="true" />PurposeLock</div><div className="header-note"><Sparkles aria-hidden="true" /><span>A little closer to yourself.</span></div></header>
-    {stage === 'welcome' ? <main className="welcome">
+    {ready ? <DevicePrivacy saving={saving} status={status} busy={busy} onEnable={() => { savingRef.current = true; setSaving(true); }} onDisable={() => deleteSaved(false)} onClear={() => deleteSaved(true)} /> : <p className="privacy-note" role="status">Opening your private visit…</p>}
+    {!ready ? null : stage === 'welcome' ? <main className="welcome">
       <div className="eyebrow"><Sprout />Small steps. Deeper roots.</div>
       <h1>You don’t have to feel<br /><em>ready</em> to begin.</h1>
       <p className="welcome-copy">Find what matters. Make room for one small step.</p>
@@ -94,7 +145,7 @@ function PurposeLock() {
         </>}
         {stage === 'reminders' && <>
           <div className="step-heading"><div className="eyebrow"><ImagePlus />A personal anchor</div><h1>Bring what matters closer.</h1><p>A person, a place, a moment. Always optional.</p></div>
-          <PhotoPicker {...photoSession} />
+          <PhotoPicker {...photoSession} saving={saving} />
           <div className="memory-toggle"><Button variant="ghost" aria-expanded={showMemory} onClick={() => setShowMemory(current => !current)}><PenLine />{showMemory ? 'Hide memory' : 'Add a memory instead—or too'}</Button></div>
           {showMemory && <div className="field-group"><label className="field-label" htmlFor="memory">When have you lived one of these values? <span>(optional)</span></label><textarea id="memory" className="purpose-textarea" value={memory} onChange={event => setMemory(event.target.value)} placeholder="One moment I remember…" maxLength={3000} /></div>}
           <div className="step-actions"><Button variant="ghost" onClick={() => goTo('values')}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => goTo('thought')}>{photoSession.photos.length || memory.trim() ? 'Bring these along' : 'Skip for now'}<ArrowRight /></Button></div>
@@ -122,7 +173,7 @@ function PurposeLock() {
           <div className="step-heading"><div className="eyebrow"><Leaf />Your time to try</div><h1>No rush. Just a beginning.</h1></div>
           {photoSession.photos[0] && <img className="focus-reminder" src={photoSession.photos[0].url} alt={`Your personal reminder: ${photoSession.photos[0].name}`} />}
           <h2 className="focus-action">{finalAction}</h2>
-          <FocusTimer minutes={minutes} onDurationChange={setMinutes} />
+          <FocusTimer minutes={minutes} initialSeconds={remaining} onRemainingChange={setRemaining} onDurationChange={duration => { setMinutes(duration); setRemaining(duration * 60); }} />
           <Button variant="reset" onClick={() => goTo('reflection')}>I gave it a try<ArrowRight /></Button>
           <div className="mt-5"><Button variant="ghost" onClick={() => goTo('action')}><ArrowLeft />Choose a different step</Button></div>
         </>}
@@ -133,13 +184,14 @@ function PurposeLock() {
           <div className="field-group"><label className="field-label" htmlFor="reflection">How did this connect with your values? <span>(optional)</span></label><textarea id="reflection" className="purpose-textarea" value={reflection} onChange={event => setReflection(event.target.value)} placeholder="A few words, if you want…" rows={4} maxLength={5000} /></div>
           <div className="step-actions"><Button variant="ghost" onClick={() => goTo('focus')}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => goTo('ending')}>{reflection.trim() ? 'Save my reflection' : 'See my postcard'}<ArrowRight /></Button></div>
           {reflection.trim() && <div className="text-center mt-4"><Button variant="ghost" onClick={() => { setReflection(''); goTo('ending'); }}>Finish without writing</Button></div>}
-          <p className="privacy-note">Just for this visit. Your words stay with you.</p>
+          <p className="privacy-note">{privacyNote}</p>
         </>}
-        {stage === 'ending' && thought && <PurposeEnding photos={photoSession.photos} thought={thought} selected={selected} action={finalAction} reflection={reflection} onBeginAgain={resetFlow} />}
+        {stage === 'ending' && thought && <PurposeEnding photos={photoSession.photos} thought={thought} selected={selected} action={finalAction} reflection={reflection} turned={turned} onTurn={setTurned} saving={saving} onBeginAgain={() => setConfirmBegin(true)} />}
         </div>
       </main>
       <div className="journey-landscape" aria-hidden="true"><PurposeLandscape /></div>
     </>}
+    <AlertDialog open={confirmBegin} onOpenChange={setConfirmBegin}><AlertDialogContent className="privacy-dialog"><AlertDialogTitle>Begin a fresh reset?</AlertDialogTitle><AlertDialogDescription>This clears your postcard, words, and photos, including any saved copy on this device. Your current postcard cannot be recovered.</AlertDialogDescription><AlertDialogFooter><AlertDialogCancel asChild><Button variant="outline" disabled={busy}>Keep my postcard</Button></AlertDialogCancel><Button variant="reset" disabled={busy} onClick={async () => { await deleteSaved(true); setConfirmBegin(false); }}>Clear & begin again</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
     <footer className="site-footer"><Sprout aria-hidden="true" /><span>PurposeLock · A prototype for values-led action</span></footer>
   </div>;
 }
