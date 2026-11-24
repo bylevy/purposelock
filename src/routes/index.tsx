@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, ArrowLeft, Sprout, Sparkles, Check, Leaf, Heart, Quote, ImagePlus, PenLine } from 'lucide-react';
+import { ArrowRight, ArrowLeft, BookOpen, Compass, Sprout, Sparkles, Check, Leaf, Heart, Quote, ImagePlus, PenLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PurposeLandscape } from '@/components/purpose-landscape';
 import { CalmPath } from '@/components/calm-path';
@@ -11,6 +11,8 @@ import { DevicePrivacy } from '@/components/device-privacy';
 import { createDeviceStore, loadProgress, type Stage, type ProgressSnapshot } from '@/lib/purpose-storage';
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { PurposeEnding } from '@/components/purpose-ending';
+import { MyJourney } from '@/components/my-journey';
+import { createJourneyStore, emptyJourney, loadJourney, type Intention, type JourneyState } from '@/lib/purpose-journey';
 
 export const Route = createFileRoute('/')({
   head: () => ({ meta: [
@@ -49,6 +51,10 @@ function PurposeLock() {
   const [status, setStatus] = useState('Opening your private visit…');
   const [confirmBegin, setConfirmBegin] = useState(false);
   const [deviceStore] = useState(createDeviceStore);
+  const [journeyStore] = useState(createJourneyStore);
+  const [journey, setJourney] = useState<JourneyState>(emptyJourney);
+  const [view, setView] = useState<'flow' | 'journey'>('flow');
+  const [archivedId, setArchivedId] = useState<string | null>(null);
   const savingRef = useRef(false);
   const revision = useRef(0);
   const privacyNote = saving ? 'Saved only in this browser on this device. Never uploaded.' : 'Only in memory for this visit. Nothing you enter is saved or uploaded.';
@@ -62,10 +68,13 @@ function PurposeLock() {
         setStage(data.stage); setSelected(data.selected); setMemory(data.memory); setShowMemory(data.showMemory);
         setAction(data.action); setCustomAction(data.customAction); setUseCustom(data.useCustom); setMinutes(data.minutes);
         setRemaining(data.remaining); setShowAllActions(data.showAllActions); setReflection(data.reflection);
-        setThought(data.thought); setRevealed(data.revealed); setTurned(data.turned);
+        setThought(data.thought); setRevealed(data.revealed); setTurned(data.turned); setArchivedId(data.archivedId ?? null);
         photoSession.restorePhotos(saved.photos); savingRef.current = true; setSaving(true);
         setStatus('Saved on this device');
-      } else setStatus('Not saved · this visit only');
+        return loadJourney().then(history => { if (active) setJourney(history); }, () => { if (active) setStatus('Saved on this device · My Journey history could not be opened.'); });
+      }
+      setStatus('Not saved · this visit only');
+      return undefined;
     }).catch(() => { if (active) setStatus('Saved progress could not be opened. Saving is off; clear it or retry later.'); })
       .finally(() => { if (active) setReady(true); });
     return () => { active = false; };
@@ -75,16 +84,38 @@ function PurposeLock() {
     if (!ready || !saving || !savingRef.current) return;
     const currentRevision = ++revision.current;
     setStatus('Saving on this device…');
-    const snapshot: ProgressSnapshot = { version: 1, consent: true, stage, selected, memory, showMemory, action, customAction, useCustom, minutes, remaining, showAllActions, reflection, thought, revealed, turned };
+    const snapshot: ProgressSnapshot = { version: 1, consent: true, stage, selected, memory, showMemory, action, customAction, useCustom, minutes, remaining, showAllActions, reflection, thought, revealed, turned, archivedId };
     deviceStore.save(snapshot, photoSession.photos).then(saved => {
       if (saved && savingRef.current && currentRevision === revision.current) setStatus('Saved on this device');
     }).catch(() => { if (savingRef.current && currentRevision === revision.current) setStatus('Changes not saved. Device storage may be full or unavailable. Clear saved progress or free space and try again.'); });
-  }, [ready, saving, stage, selected, memory, showMemory, action, customAction, useCustom, minutes, remaining, showAllActions, reflection, thought, revealed, turned, photoSession.photos, deviceStore]);
+  }, [ready, saving, stage, selected, memory, showMemory, action, customAction, useCustom, minutes, remaining, showAllActions, reflection, thought, revealed, turned, archivedId, photoSession.photos, deviceStore]);
+
+  useEffect(() => {
+    if (!ready || !saving || !savingRef.current) return;
+    journeyStore.save(journey).catch(() => { if (savingRef.current) setStatus('My Journey changes not saved. Device storage may be full or unavailable.'); });
+  }, [ready, saving, journey, journeyStore]);
+
+  function archiveJourney(finalReflection: string) {
+    if (!thought || !finalAction) return;
+    const id = crypto.randomUUID();
+    const entry = { id, completedAt: new Date().toISOString(), selected, action: finalAction, thought, reflection: finalReflection.trim(), photos: photoSession.photos.map(({ blob, name }) => ({ blob, name })) };
+    // Revisiting the ending replaces this journey's own entry instead of duplicating it.
+    setJourney(current => ({ ...current, entries: [...current.entries.filter(item => item.id !== archivedId), entry] }));
+    setArchivedId(id);
+  }
+  function finish(finalReflection: string) { archiveJourney(finalReflection); goTo('ending'); }
+  async function beginAgain() {
+    resetFlow(); setArchivedId(null); setView('flow');
+    if (!savingRef.current) return;
+    setBusy(true);
+    try { await deviceStore.clear(); } catch { setStatus('Could not clear the previous path. Close other PurposeLock tabs and retry.'); }
+    finally { setBusy(false); }
+  }
 
   async function deleteSaved(reset: boolean) {
     savingRef.current = false; revision.current++; setSaving(false); setBusy(true);
-    if (reset) resetFlow();
-    try { await deviceStore.clear(); setStatus('Not saved · this visit only'); }
+    if (reset) { resetFlow(); setArchivedId(null); setJourney(emptyJourney); setView('flow'); }
+    try { await Promise.all([deviceStore.clear(), journeyStore.clear()]); setStatus('Not saved · this visit only'); }
     catch { setStatus('Could not delete every saved item. Close other PurposeLock tabs and retry Clear my saved progress.'); }
     finally { setBusy(false); }
   }
@@ -119,14 +150,14 @@ function PurposeLock() {
   }
 
   return <div className={`purpose-shell ${stage !== 'welcome' ? 'journey-shell' : ''}`}>
-    <header className="site-header"><div className="wordmark"><Sprout className="brand-leaf" aria-hidden="true" />PurposeLock</div><div className="header-note"><Sparkles aria-hidden="true" /><span>A little closer to yourself.</span></div></header>
+    <header className="site-header"><div className="wordmark"><Sprout className="brand-leaf" aria-hidden="true" />PurposeLock</div><div className="header-tools"><div className="header-note"><Sparkles aria-hidden="true" /><span>A little closer to yourself.</span></div>{ready && <Button variant="outline" size="sm" aria-pressed={view === 'journey'} onClick={() => setView(current => current === 'journey' ? 'flow' : 'journey')}><BookOpen />My Journey</Button>}</div></header>
     {ready ? <DevicePrivacy saving={saving} status={status} busy={busy} onEnable={() => { savingRef.current = true; setSaving(true); }} onDisable={() => deleteSaved(false)} onClear={() => deleteSaved(true)} /> : <p className="privacy-note" role="status">Opening your private visit…</p>}
-    {!ready ? null : stage === 'welcome' ? <main className="welcome">
+    {!ready ? null : view === 'journey' ? <><MyJourney entries={journey.entries} intention={journey.intention} saving={saving} currentValues={selected} onSetIntention={(intention: Intention | null) => setJourney(current => ({ ...current, intention }))} onDeleteEntry={id => { setJourney(current => ({ ...current, entries: current.entries.filter(entry => entry.id !== id) })); }} onClearHistory={async () => { setJourney(current => ({ ...current, entries: [] })); }} onClose={() => setView('flow')} /><div className="journey-landscape" aria-hidden="true"><PurposeLandscape /></div></> : stage === 'welcome' ? <main className="welcome">
       <div className="eyebrow"><Sprout />Small steps. Deeper roots.</div>
       <h1>You don’t have to feel<br /><em>ready</em> to begin.</h1>
       <p className="welcome-copy">Find what matters. Make room for one small step.</p>
       <div className="welcome-cta"><Button variant="reset" onClick={() => goTo('values')}>Start my reset<ArrowRight /></Button></div>
-      <div className="invitation"><Leaf /><span>No pressure. Just a beginning.</span></div>
+      {journey.intention ? <button type="button" className="welcome-intention" onClick={() => setView('journey')}><Compass aria-hidden="true" /><span><span className="welcome-intention-label">{journey.intention.period === 'today' ? 'Today' : 'This week'} · {journey.intention.value}</span>{journey.intention.text}</span></button> : <div className="invitation"><Leaf /><span>No pressure. Just a beginning.</span></div>}
       <PurposeLandscape />
       <div className="welcome-waypoints" aria-label="Your journey"><span><Leaf />Find your values</span><span><Heart />Try a small step</span><span><ImagePlus />Keep what matters</span></div>
     </main> : <>
@@ -182,8 +213,8 @@ function PurposeLock() {
           <div className="reflection-context"><span>Your small step</span><p>{finalAction}</p></div>
           <div className="reflection-prompts" aria-label="Optional reflection starters">{['It felt true', 'It felt hard', 'I’m still exploring'].map(prompt => <Button key={prompt} variant="outline" onClick={() => setReflection(current => current.trim() ? current : `${prompt} because `)}>{prompt}</Button>)}</div>
           <div className="field-group"><label className="field-label" htmlFor="reflection">How did this connect with your values? <span>(optional)</span></label><textarea id="reflection" className="purpose-textarea" value={reflection} onChange={event => setReflection(event.target.value)} placeholder="A few words, if you want…" rows={4} maxLength={5000} /></div>
-          <div className="step-actions"><Button variant="ghost" onClick={() => goTo('focus')}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => goTo('ending')}>{reflection.trim() ? 'Save my reflection' : 'See my postcard'}<ArrowRight /></Button></div>
-          {reflection.trim() && <div className="text-center mt-4"><Button variant="ghost" onClick={() => { setReflection(''); goTo('ending'); }}>Finish without writing</Button></div>}
+          <div className="step-actions"><Button variant="ghost" onClick={() => goTo('focus')}><ArrowLeft />Back</Button><Button variant="reset" onClick={() => finish(reflection)}>{reflection.trim() ? 'Save my reflection' : 'See my postcard'}<ArrowRight /></Button></div>
+          {reflection.trim() && <div className="text-center mt-4"><Button variant="ghost" onClick={() => { setReflection(''); finish(''); }}>Finish without writing</Button></div>}
           <p className="privacy-note">{privacyNote}</p>
         </>}
         {stage === 'ending' && thought && <PurposeEnding photos={photoSession.photos} thought={thought} selected={selected} action={finalAction} reflection={reflection} turned={turned} onTurn={setTurned} saving={saving} onBeginAgain={() => setConfirmBegin(true)} />}
@@ -191,7 +222,7 @@ function PurposeLock() {
       </main>
       <div className="journey-landscape" aria-hidden="true"><PurposeLandscape /></div>
     </>}
-    <AlertDialog open={confirmBegin} onOpenChange={setConfirmBegin}><AlertDialogContent className="privacy-dialog"><AlertDialogTitle>Begin a fresh reset?</AlertDialogTitle><AlertDialogDescription>This clears your postcard, words, and photos, including any saved copy on this device. Your current postcard cannot be recovered.</AlertDialogDescription><AlertDialogFooter><AlertDialogCancel asChild><Button variant="outline" disabled={busy}>Keep my postcard</Button></AlertDialogCancel><Button variant="reset" disabled={busy} onClick={async () => { await deleteSaved(true); setConfirmBegin(false); }}>Clear & begin again</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <AlertDialog open={confirmBegin} onOpenChange={setConfirmBegin}><AlertDialogContent className="privacy-dialog"><AlertDialogTitle>Begin a fresh reset?</AlertDialogTitle><AlertDialogDescription>This clears the current path, words, and photos. Your postcard stays in My Journey.</AlertDialogDescription><AlertDialogFooter><AlertDialogCancel asChild><Button variant="outline" disabled={busy}>Keep my postcard</Button></AlertDialogCancel><Button variant="reset" disabled={busy} onClick={async () => { await beginAgain(); setConfirmBegin(false); }}>Begin a fresh path</Button></AlertDialogFooter></AlertDialogContent></AlertDialog>
     <footer className="site-footer"><Sprout aria-hidden="true" /><span>PurposeLock · A prototype for values-led action</span></footer>
   </div>;
 }

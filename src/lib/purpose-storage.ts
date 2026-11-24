@@ -12,7 +12,7 @@ const snapshotSchema = z.object({
   customAction: z.string().max(500), useCustom: z.boolean(), minutes: z.number().int().min(1).max(120),
   remaining: z.number().int().min(0).max(7200), showAllActions: z.boolean(),
   reflection: z.string().max(5000), thought: z.object({ values: z.array(z.string()).max(9), text: z.string().min(1).max(2000), attribution: z.string().superRefine((value, context) => { if (value !== 'An original PurposeLock reflection') context.addIssue({ code: 'custom', message: 'Invalid attribution' }); }) }).nullable(),
-  revealed: z.boolean(), turned: z.boolean(),
+  revealed: z.boolean(), turned: z.boolean(), archivedId: z.string().max(80).nullable().optional(),
 }).refine(data => data.remaining <= data.minutes * 60)
   .refine(data => ['welcome', 'values'].includes(data.stage) || (data.selected.length > 0 && data.thought !== null))
   .refine(data => !['focus', 'reflection', 'ending'].includes(data.stage) || Boolean(data.useCustom ? data.customAction.trim() : data.action.trim()));

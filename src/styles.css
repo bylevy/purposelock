@@ -336,3 +336,40 @@
 .privacy-dialog { width: min(480px, calc(100% - 32px)); border-radius: 8px; box-shadow: var(--paper-shadow); }
 .privacy-dialog button { white-space: normal; height: auto; min-height: 42px; }
 @media (max-width: 640px) { .device-privacy-top { align-items: flex-start; } .device-privacy-top > span { line-height: 1.6; } .device-privacy-top button { flex-shrink: 0; } }
+
+/* My Journey */
+.header-tools { display: flex; align-items: center; gap: 16px; }
+.my-journey { max-width: 760px; }
+.journey-card { margin: 0 auto 22px; padding: 24px 26px; background: var(--card); border: 1px solid var(--border); border-radius: 18px; text-align: left; }
+.journey-card-title { display: flex; align-items: center; gap: 10px; font-family: var(--font-serif, serif); font-size: 22px; color: var(--primary); margin-bottom: 12px; }
+.journey-card-title svg { width: 18px; color: var(--gold); }
+.journey-title { font-size: clamp(28px, 4vw, 40px); }
+.journey-muted { color: var(--muted-foreground); line-height: 1.6; margin-bottom: 12px; }
+.journey-privacy { margin-bottom: 22px; }
+.journey-inline-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.intention-text { font-family: var(--font-serif, serif); font-size: 21px; line-height: 1.4; color: var(--foreground); margin-top: 10px; }
+.intention-form { display: grid; gap: 8px; }
+.intention-period { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border: 0; padding: 0; margin: 0 0 6px; }
+.intention-period legend { margin-bottom: 6px; }
+.intention-period .selected { background: var(--secondary); border-color: var(--primary); }
+.intention-select, .intention-input { width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--foreground); }
+.intention-select:focus-visible, .intention-input:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.becoming-list { display: grid; gap: 12px; padding-left: 0; list-style: none; }
+.becoming-list li { padding-left: 18px; border-left: 2px solid var(--gold); line-height: 1.6; overflow-wrap: anywhere; }
+.journey-archive { text-align: left; margin: 10px 0 24px; }
+.archive-list { display: grid; gap: 14px; list-style: none; padding: 0; }
+.archive-item { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 20px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--paper-shadow); }
+.archive-meta { min-width: 0; overflow-wrap: anywhere; }
+.archive-date { display: block; font-family: var(--font-serif, serif); font-size: 18px; color: var(--primary); }
+.archive-values { display: block; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); margin: 4px 0; }
+.archive-item .journey-inline-actions { margin-top: 0; flex-shrink: 0; }
+.welcome-intention { display: inline-flex; align-items: flex-start; gap: 10px; margin: 18px auto 0; padding: 12px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); color: var(--foreground); text-align: left; max-width: min(440px, 100%); overflow-wrap: anywhere; }
+.welcome-intention svg { width: 16px; color: var(--gold); flex-shrink: 0; margin-top: 3px; }
+.welcome-intention-label { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-foreground); }
+.welcome-intention:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .header-tools { gap: 8px; }
+  .header-tools .header-note { display: none; }
+  .journey-card { padding: 20px 18px; }
+  .archive-item { flex-direction: column; align-items: stretch; }
+}
