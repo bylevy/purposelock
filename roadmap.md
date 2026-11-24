@@ -12,3 +12,4 @@
 - [x] Add explicit opt-in device saving and restore progress, timer, postcard, and local photos.
 - [x] Add privacy disclosures and confirmed clearing/Begin again; handle storage failures safely.
 - [x] Test consent off/on, reload, photo removal, clearing/reset, quote continuity, and mobile; do not publish.
+- [x] Add My Journey archive, "Who am I becoming?" themes, and daily/weekly intention with tests.

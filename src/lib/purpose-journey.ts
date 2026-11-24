@@ -11,7 +11,7 @@ const entrySchema = z.object({
   completedAt: z.string().refine(value => !Number.isNaN(Date.parse(value))),
   selected: z.array(valueName).min(1).max(9),
   action: z.string().min(1).max(500),
-  thought: z.object({ values: z.array(z.string()).max(9), text: z.string().min(1).max(2000), attribution: z.string().refine(value => value === 'An original PurposeLock reflection') }),
+  thought: z.object({ values: z.array(z.string()).max(9), text: z.string().min(1).max(2000), attribution: z.string().refine((value: string): boolean => value === 'An original PurposeLock reflection') }),
   reflection: z.string().max(5000),
 });
 const intentionSchema = z.object({ text: z.string().trim().min(1).max(200), value: valueName, period: z.enum(['today', 'week']), setAt: z.string() });

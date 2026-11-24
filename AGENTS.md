@@ -17,3 +17,4 @@
 - Store the selected thought in parent React state and pass it with photos and reflection to the ending component, so the same personal reminders survive step navigation until reset.
 - Model the experience as five visual Calm Path stops while allowing focus and reflection to be substeps of the action stop, so progress stays simple without coupling timer state to navigation.
 - Serialize device-storage operations and invalidate pending writes before consent withdrawal or reset; commit photo blobs before snapshot state, so stale saves cannot resurrect cleared content.
+- Keep My Journey (archived postcards, intention) in `src/lib/purpose-journey.ts` with its own localStorage key and photo database, saved only under the same consent; entries are immutable per id and Begin again clears only current progress, so the archive survives new journeys.
